@@ -1,0 +1,211 @@
+﻿<Window x:Class="MissionTelemetry.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Mission Telemetry Console"
+        Width="1330" Height="860"
+        Background="{StaticResource SpaceBlackBrush}"
+        Foreground="{StaticResource TextDimBrush}">
+    <!-- Fenster-Inhalt -->
+    <Grid Background="{StaticResource StarfieldBrush}">
+        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Titel -->
+        <Border Grid.Row="0" Margin="14,14,14,0" Padding="12" CornerRadius="10"
+            Background="#101218" BorderBrush="#2A2F3A" BorderThickness="1"
+            Effect="{StaticResource HoloGlow}">
+            <DockPanel>
+                <TextBlock Text="MISSION TELEMETRY CONSOLE" FontSize="22" FontWeight="Black"
+                   Foreground="{StaticResource RebelGoldBrush}" />
+                
+            </DockPanel>
+        </Border>
+
+        <!-- Controls -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="14">
+            <Button Content="START" Command="{Binding StartCommand}" Width="110" Height="36"/>
+            <Button Content="STOP" Command="{Binding StopCommand}" Margin="10,0,0,0" Width="110" Height="36"/>
+            <Button Content="CLEAR" Command="{Binding ClearCommand}" Margin="10,0,0,0" Width="110" Height="36"/>
+
+            <Button Content="ACK SELECTED" Command="{Binding AckSelectedCommand}" Margin="26,0,0,0" Width="140" Height="36"/>
+            <Button Content="ACK ALL" Command="{Binding AckAllCommand}" Margin="10,0,0,0" Width="120" Height="36"/>
+
+            <!-- Ampel -->
+            <Border Margin="26,0,0,0" Padding="8,4" CornerRadius="8"
+              BorderBrush="#333945" BorderThickness="1" Background="#0E1117"
+              Effect="{StaticResource HoloGlow}">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="14" Height="14">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Fill" Value="{StaticResource HoloGreenBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HighestSeverity}" Value="Warning">
+                                        <Setter Property="Fill" Value="{StaticResource HoloAmberBrush}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding HighestSeverity}" Value="Alarm">
+                                        <Setter Property="Fill" Value="{StaticResource ImperialRedBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+                    <TextBlock Text="{Binding HighestSeverity}" Margin="8,0,0,0" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="{Binding IsRunning, StringFormat=  |  RUNNING: {0}}"
+                 Margin="16,0,0,0" VerticalAlignment="Center"
+                 Foreground="{StaticResource HoloCyanBrush}"/>
+        </StackPanel>
+
+        <!-- Hauptbereich -->
+        <Grid Grid.Row="2" Margin="14">
+            <!-- Property-Elemente zuerst -->
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="460"/>
+            </Grid.ColumnDefinitions>
+
+            
+            <!-- Links (scrollbarer DataGrid + feste Alarme) -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <!-- oben: nimmt restliche Höhe -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- unten: Alarme in fixer/Auto-Höhe -->
+                </Grid.RowDefinitions>
+
+                
+                <Border Grid.Row="0" Margin="0,0,10,10" Padding="10" CornerRadius="10"
+          Background="{StaticResource PanelGreyBrush}" BorderBrush="#2A2F3A"
+          BorderThickness="1" Effect="{StaticResource HoloGlow}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <!-- Titel -->
+                            <RowDefinition Height="*"/>
+                            <!-- DataGrid -->
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="TELEMETRY FEED" FontSize="16"
+                 Foreground="{StaticResource RebelGoldBrush}" />
+
+                        <DataGrid Grid.Row="1" Margin="0,10,0,0"
+                ItemsSource="{Binding Frames}"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.CanContentScroll="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="#" Binding="{Binding Sequence}" Width="60"/>
+                                <DataGridTextColumn Header="UTC" Binding="{Binding TimeStamp}" Width="180"/>
+                                <DataGridTextColumn Header="U[V]" Binding="{Binding PowerVoltage, StringFormat=F2}" Width="80"/>
+                                <DataGridTextColumn Header="I[A]" Binding="{Binding PowerCurrent, StringFormat=F2}" Width="80"/>
+                                <DataGridTextColumn Header="T[°C]" Binding="{Binding BoardTemp, StringFormat=F1}" Width="90"/>
+                                <DataGridTextColumn Header="SNR" Binding="{Binding SNR, StringFormat=F1}" Width="80"/>
+                                <DataGridTextColumn Header="Roll" Binding="{Binding Roll, StringFormat=F1}" Width="80"/>
+                                <DataGridTextColumn Header="Pitch" Binding="{Binding Pitch, StringFormat=F1}" Width="80"/>
+                                <DataGridTextColumn Header="Yaw" Binding="{Binding Yaw, StringFormat=F1}" Width="80"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- Active Alarms  -->
+                <Border Grid.Row="1" Margin="0,0,10,0" Padding="10" CornerRadius="10"
+          Background="{StaticResource PanelGreyBrush}" BorderBrush="#2A2F3A"
+          BorderThickness="1" Effect="{StaticResource HoloGlow}">
+                    <StackPanel>
+                        <TextBlock Text="ACTIVE ALARMS" FontSize="16" Foreground="{StaticResource RebelGoldBrush}" />
+                        <ListView Margin="0,10,0,0" Height="260"
+                ItemsSource="{Binding ActiveAlarms}"
+                SelectedItem="{Binding SelectedAlarm, Mode=TwoWay}">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="Background" Value="#161A22"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Severity}" Value="Warning">
+                                            <Setter Property="Background" Value="#2A220F"/>
+                                            <Setter Property="Foreground" Value="{StaticResource HoloAmberBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{StaticResource HoloAmberBrush}"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Severity}" Value="Alarm">
+                                            <Setter Property="Background" Value="#2A1010"/>
+                                            <Setter Property="Foreground" Value="{StaticResource ImperialRedBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{StaticResource ImperialRedBrush}"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Severity" DisplayMemberBinding="{Binding Severity}" Width="90"/>
+                                    <GridViewColumn Header="Key" DisplayMemberBinding="{Binding Key}" Width="200"/>
+                                    <GridViewColumn Header="Message" DisplayMemberBinding="{Binding Message}" Width="360"/>
+                                    <GridViewColumn Header="Count" DisplayMemberBinding="{Binding Count}" Width="60"/>
+                                    <GridViewColumn Header="Seen (UTC)" DisplayMemberBinding="{Binding LastSeenUtc}" Width="170"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+
+            <!-- Rechts: Radar + Proximity -->
+            <StackPanel Grid.Column="1">
+                <!-- Radar -->
+                <Border Margin="0,0,0,10" Padding="10" CornerRadius="10"
+                Background="#0E1117" BorderBrush="#2A2F3A" BorderThickness="1"
+                Effect="{StaticResource StrongGlow}">
+                    <StackPanel>
+                        <TextBlock Text="HOLOGRAPHIC RADAR" FontSize="16" Foreground="{StaticResource HoloCyanBrush}"/>
+                        <Border Margin="0,10,0,0" BorderBrush="#334" BorderThickness="1" CornerRadius="10" Background="#0C1016">
+                            <Grid>
+                                <Canvas Name="RadarCanvas" Width="420" Height="420" Loaded="RadarCanvas_Loaded"/>
+                            </Grid>
+                        </Border>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <TextBlock Text="RANGE (km):" VerticalAlignment="Center" Foreground="{StaticResource HoloCyanBrush}"/>
+                            <Slider Minimum="5" Maximum="50" Width="240" Margin="8,0,0,0"
+                      Value="{Binding RadarRangeKm, Mode=TwoWay}"/>
+                            <TextBlock Text="{Binding RadarRangeKm, StringFormat=F0}" Margin="8,0,0,0"
+                         VerticalAlignment="Center" Foreground="{StaticResource HoloCyanBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Proximity-Tabelle -->
+                <Border Padding="10" CornerRadius="10"
+                Background="{StaticResource PanelGreyBrush}" BorderBrush="#2A2F3A"
+                BorderThickness="1" Effect="{StaticResource HoloGlow}">
+                    <StackPanel>
+                        <TextBlock Text="PROXIMITY CONTACTS" FontSize="16" Foreground="{StaticResource RebelGoldBrush}" />
+                        <ListView Margin="0,10,0,0" Height="260" ItemsSource="{Binding Proximity}">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="#" DisplayMemberBinding="{Binding Id}" Width="40"/>
+                                    <GridViewColumn Header="Dist [km]" DisplayMemberBinding="{Binding Distance_km}" Width="90"/>
+                                    <GridViewColumn Header="Bearing [°]" DisplayMemberBinding="{Binding Bearing_deg}" Width="110"/>
+                                    <GridViewColumn Header="Closing [m/s]" DisplayMemberBinding="{Binding Closing_ms}" Width="120"/>
+                                    <GridViewColumn Header="TTCA [s]" DisplayMemberBinding="{Binding TTCA_s}" Width="90"/>
+                                    <GridViewColumn Header="CPA [km]" DisplayMemberBinding="{Binding CPA_Dist_km}" Width="90"/>
+                                    <GridViewColumn Header="TCPA [s]" DisplayMemberBinding="{Binding TCPA_s}" Width="90"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
