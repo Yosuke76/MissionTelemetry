@@ -1,0 +1,6 @@
+@MissionTelemetry.Api_HostAddress = http://localhost:5193
+
+GET {{MissionTelemetry.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
