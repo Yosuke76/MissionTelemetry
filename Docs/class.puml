@@ -1,0 +1,163 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+' ========= Core: Modelle =========
+class TelemetryFrame {
+  +int Sequence
+  +DateTime TimestampUtc
+  +double PowerVoltage
+  +double PowerCurrent
+  +double BoardTemp
+  +double SNR
+  +double Roll
+  +double Pitch
+  +double Yaw
+  +Dictionary~string,double~ Values
+}
+
+class ProximityContact {
+  +int Id
+  +double X_km
+  +double Y_km
+  +double Vx_kms
+  +double Vy_kms
+  +double Distance_km
+  +double Bearing_deg
+  +double Closing_ms
+  +double TTCA_s
+  +double CPA_Dist_km
+  +double TCPA_s
+}
+
+class ProximitySnapshot {
+  +DateTime TimestampUtc
+  +List~ProximityContact~ Contacts
+}
+
+enum Severity {
+  Info
+  Warning
+  Alarm
+}
+
+enum ComparatorType {
+  LessThan
+  GreaterThan
+  Between
+}
+
+class AlarmRule {
+  +string Key
+  +Severity Severity
+  +ComparatorType Comparator
+  +double? ThresholdMin
+  +double? ThresholdMax
+  +bool Latched
+  +bool IsTriggered(double)
+}
+
+class AlarmEvent {
+  +DateTime TimestampUtc
+  +string Key
+  +double Value
+  +Severity Severity
+  +string Message
+}
+
+class ActiveAlarm {
+  +string Id
+  +string Key
+  +Severity Severity
+  +string Message
+  +double LastValue
+  +DateTime FirstSeenUtc
+  +DateTime LastSeenUtc
+  +bool IsLatched
+  +bool IsAcknowledged
+  +int Count
+}
+
+' ========= Core: Services / Interfaces =========
+interface ITelemetrySource {
+  +Start()
+  +Stop()
+  +FrameReceived(TelemetryFrame)
+}
+class SimulatedTelemetrySource
+ITelemetrySource <|.. SimulatedTelemetrySource
+
+interface IProximitySource {
+  +Start()
+  +Stop()
+  +Snapshot(ProximitySnapshot)
+}
+class SimulatedProximitySource
+IProximitySource <|.. SimulatedProximitySource
+
+interface IAlarmEvaluator {
+  +IReadOnlyList~AlarmRule~ Rules
+  +IEnumerable~AlarmEvent~ Evaluate(TelemetryFrame)
+}
+class DataDrivenAlarmEvaluator
+IAlarmEvaluator <|.. DataDrivenAlarmEvaluator
+
+interface IAlarmManager {
+  +ReadOnlyObservableCollection~ActiveAlarm~ ActiveAlarms
+  +Severity HighestSeverity
+  +RaiseOrUpdate(key,severity,message,value,latched)
+  +ClearIfNotLatched(key)
+  +Acknowledge(id)
+  +AcknowledgeAll()
+}
+class AlarmManager
+IAlarmManager <|.. AlarmManager
+
+' ========= API-Schicht =========
+class SimulationWorker {
+  -ITelemetrySource tm
+  -IProximitySource prox
+  -IAlarmEvaluator eval
+  -IAlarmManager alarms
+  -ITelemetryRepository tmRepo
+  -IProximityRepository proxRepo
+  +StartSim()
+  +StopSim()
+  +Clear()
+}
+
+interface ITelemetryRepository {
+  +Add(TelemetryFrame)
+  +GetLatest(int): IReadOnlyList~TelemetryFrame~
+  +GetRange(int,int): IReadOnlyList~TelemetryFrame~
+  +Clear()
+  +Count: int
+}
+class InMemoryTelemetryRepository
+ITelemetryRepository <|.. InMemoryTelemetryRepository
+
+interface IProximityRepository {
+  +Set(ProximitySnapshot)
+  +GetLatest(): ProximitySnapshot?
+}
+class InMemoryProximityRepository
+IProximityRepository <|.. InMemoryProximityRepository
+
+interface IAlarmReadModel {
+  +GetActive(): ReadOnlyCollection~ActiveAlarm~
+  +Highest: Severity
+  +Ack(string)
+  +AckAll()
+}
+class AlarmReadModelAdapter
+IAlarmReadModel <|.. AlarmReadModelAdapter
+
+' ========= Beziehungen =========
+SimulationWorker --> ITelemetrySource
+SimulationWorker --> IProximitySource
+SimulationWorker --> IAlarmEvaluator
+SimulationWorker --> IAlarmManager
+SimulationWorker --> ITelemetryRepository
+SimulationWorker --> IProximityRepository
+AlarmReadModelAdapter --> IAlarmManager
+@enduml
