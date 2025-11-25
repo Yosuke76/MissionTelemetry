@@ -4,7 +4,15 @@
     <ProjectReference Include="..\MissionTelemetry.Core\MissionTelemetry.Core.csproj" />
   </ItemGroup>
 
-  <PropertyGroup>
+	<ItemGroup>
+		<None Update="mission_dict.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+
+
+	<PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
     <Nullable>enable</Nullable>

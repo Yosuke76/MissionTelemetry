@@ -1,8 +1,11 @@
 ﻿<Application x:Class="MissionTelemetry.Wpf.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Startup="OnStartup">
+    <!-- <Application.StartupUri>MainWindow.xaml</Application.StartupUri> -->
     <Application.Resources>
-        
+
+
         <Color x:Key="SpaceBlack">#0A0B0D</Color>
         <Color x:Key="PanelGrey">#16181D</Color>
         <Color x:Key="HoloCyan">#13E8FF</Color>
@@ -133,5 +136,8 @@
         <Style TargetType="Slider">
             <Setter Property="Foreground" Value="{StaticResource HoloCyanBrush}"/>
         </Style>
+
     </Application.Resources>
 </Application>
+    
+
