@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
+
 
 namespace MissionTelemetry.Core.Models;
+
+
 
 public sealed class TelemetryDictionary
 {
@@ -24,14 +23,13 @@ public sealed class LimitBundle
     public LimitSpec? Alarm { get; set; }
 }
 
-// einfache Vergleichsarten
-public enum ComparatorType { LessThan, GreaterThan, Between }
-
+/// <summary>
+/// Nutzt DEINE Comparator-Enum (LessThan / GreaterThan / Between)
+/// </summary>
 public sealed class LimitSpec
 {
-    public ComparatorType Comparator { get; set; }
-    public double? Min { get; set; }
-    public double? Max { get; set; }
-    public double? Hysteresis { get; set; } // Rückkehr-Puffer
-    public double? PersistS { get; set; }   // wie lange verletzt, bevor Alarm
+    public Comparator Comparator { get; set; }      // <- deine Enum
+    public double? Min { get; set; }                // mappt auf AlarmRule.ThresholdMin
+    public double? Max { get; set; }                // mappt auf AlarmRule.ThresholdMax
+    public bool Latched { get; set; } = false;      // mappt auf AlarmRule.Latched
 }

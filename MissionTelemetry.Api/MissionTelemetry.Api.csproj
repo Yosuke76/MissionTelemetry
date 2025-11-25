@@ -23,4 +23,11 @@
     <ProjectReference Include="..\MissionTelemetry.Core\MissionTelemetry.Core.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<None Update="mission_dict.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+
 </Project>

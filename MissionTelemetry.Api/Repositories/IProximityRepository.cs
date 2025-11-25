@@ -1,6 +1,10 @@
-﻿namespace MissionTelemetry.Api.Repositories
+﻿using MissionTelemetry.Core.Models;
+
+namespace MissionTelemetry.Api.Repositories;
+
+public interface IProximityRepository
 {
-    public class IProximityRepository
-    {
-    }
+    void Set(ProximitySnapshot snapshot);
+    ProximitySnapshot? GetLatest();
 }
+
