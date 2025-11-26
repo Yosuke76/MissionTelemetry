@@ -16,6 +16,7 @@ namespace MissionTelemetry.Api.Services;
     private readonly IProximityRepository _proxRepo;
     private readonly IAlarmEvaluator _evaluator;
     private readonly IAlarmManager _alarms;
+    private readonly ILogger<SimulationWorker> _log;
 
 
     public SimulationWorker(
@@ -24,7 +25,8 @@ namespace MissionTelemetry.Api.Services;
         ITelemetryRepository teleRepo,
         IProximityRepository proxRepo,
         IAlarmEvaluator evaluator,
-        IAlarmManager alarms)
+        IAlarmManager alarms,
+        ILogger<SimulationWorker> log)
     {
         _telemetry = telemetry;
         _proximity = proximity;
@@ -32,9 +34,11 @@ namespace MissionTelemetry.Api.Services;
         _proxRepo = proxRepo;
         _evaluator = evaluator;
         _alarms = alarms;
+        _log = log;
 
         _telemetry.FrameReceived += OnFrame;
         _proximity.Snapshot += OnSnapshot;
+        
     }
 
     private void OnFrame(object? sender, TelemetryFrame frame)
@@ -59,14 +63,17 @@ namespace MissionTelemetry.Api.Services;
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        _log.LogInformation("SimulationWorker starting sources..");
         _telemetry.Start();
         _proximity.Start();
+        _log.LogInformation("SimulationWorker started.");
         return Task.CompletedTask;
     }
 
 
     public override Task StopAsync(CancellationToken cancellationToken)
     {
+        _log.LogInformation("SimulationWorker stoping..");
         _telemetry.Stop();
         _proximity.Stop();  
         return base.StopAsync(cancellationToken);

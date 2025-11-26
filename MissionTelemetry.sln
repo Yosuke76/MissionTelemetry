@@ -18,6 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{02EA681E-C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MissionTelemetry.Api", "MissionTelemetry.Api\MissionTelemetry.Api.csproj", "{2F0F8A97-960D-4F02-B581-4721375CBAD8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MissionTelemetry.Persistence", "MissionTelemetry.Persistence\MissionTelemetry.Persistence.csproj", "{22AEE5EC-7A8D-4241-A5BA-EC4796667360}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,6 +66,18 @@ Global
 		{2F0F8A97-960D-4F02-B581-4721375CBAD8}.Release|x64.Build.0 = Release|Any CPU
 		{2F0F8A97-960D-4F02-B581-4721375CBAD8}.Release|x86.ActiveCfg = Release|Any CPU
 		{2F0F8A97-960D-4F02-B581-4721375CBAD8}.Release|x86.Build.0 = Release|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Debug|x64.Build.0 = Debug|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Debug|x86.Build.0 = Debug|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Release|x64.ActiveCfg = Release|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Release|x64.Build.0 = Release|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Release|x86.ActiveCfg = Release|Any CPU
+		{22AEE5EC-7A8D-4241-A5BA-EC4796667360}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
