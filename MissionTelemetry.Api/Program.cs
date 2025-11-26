@@ -10,6 +10,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();     // Microsoft.AspNetCore.OpenApi
 builder.Services.AddControllers();
 
+builder.Services.AddSingleton<ITelemetryRepository, InMemoryTelemetryRepository>();
+builder.Services.AddSingleton<IProximityRepository, InMemoryProximityRepository>();
+builder.Services.AddSingleton<IAlarmReadModel, AlarmReadModelAdapter>();
+
+builder.Services.AddSingleton<IAlarmEvaluator>(sp =>
+{
+    var path = Path.Combine(AppContext.BaseDirectory, "mission_dict.json");
+    var dict = new JsonDictionaryLoader().LoadFromFile(path);
+    return new DataDrivenAlarmEvaluator(dict);
+});
+
+builder.Services.AddSingleton<IAlarmManager, AlarmManager>();
+
+builder.Services.AddSingleton<IProximitySource>(_ => new SimulatedProximitySource(1.0));
+builder.Services.AddSingleton<ITelemtrySource>(_ => new SimulatedTelemetrySource(1.0));
+builder.Services.AddHostedService<MissionTelemetry.Api.Services.SimulationWorker>();
+
 var app = builder.Build();
 
 // OpenAPI JSON IMMER verfügbar (nicht nur in Development)
