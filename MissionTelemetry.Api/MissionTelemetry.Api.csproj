@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MissionTelemetry.Core\MissionTelemetry.Core.csproj" />
+    <ProjectReference Include="..\MissionTelemetry.Persistence\MissionTelemetry.Persistence.csproj" />
   </ItemGroup>
 
 	<ItemGroup>

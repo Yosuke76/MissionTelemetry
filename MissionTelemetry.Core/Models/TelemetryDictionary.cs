@@ -23,9 +23,9 @@ public sealed class LimitBundle
     public LimitSpec? Alarm { get; set; }
 }
 
-/// <summary>
-/// Nutzt DEINE Comparator-Enum (LessThan / GreaterThan / Between)
-/// </summary>
+
+/// Nutzt Comparator-Enum (LessThan / GreaterThan / Between)
+
 public sealed class LimitSpec
 {
     public Comparator Comparator { get; set; }      // <- deine Enum
