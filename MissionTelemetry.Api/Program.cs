@@ -33,7 +33,7 @@ builder.Services.AddResponseCompression(opts =>
 });
 
 //  Repos / Evaluator / Manager / Quellen / Worker 
-builder.Services.AddSingleton<ITelemetryRepository, InMemoryTelemetryRepository>();
+builder.Services.AddScoped<ITelemetryRepository, EfTelemetryRepository>();
 builder.Services.AddSingleton<IProximityRepository, InMemoryProximityRepository>();
 builder.Services.AddSingleton<IAlarmReadModel, AlarmReadModelAdapter>();
 

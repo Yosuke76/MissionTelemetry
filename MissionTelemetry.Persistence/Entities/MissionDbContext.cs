@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MissionTelemetry.Persistence.Entities;
 
-namespace MissionTelemetry.Persistence.Entities
+namespace MissionTelemetry.Persistence
 {
     public sealed class MissionDbContext : DbContext
     {
