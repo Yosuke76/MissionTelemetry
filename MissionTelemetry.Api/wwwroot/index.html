@@ -1,0 +1,129 @@
+﻿<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MissionTelemetry Web</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, Arial, sans-serif;
+            background: #0a0f14;
+            color: #e6f1ff;
+        }
+
+        header, main {
+            max-width: 1100px;
+            margin: auto;
+            padding: 16px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .card {
+            background: #111a22;
+            border: 1px solid #1f2a34;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        a, button {
+            color: #9bdcff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>MissionTelemetry – Web Console</h1>
+        <p>
+            <a href="/docs">Docs</a> · <a href="/openapi/v1.json">OpenAPI</a>
+        </p>
+    </header>
+
+    <main class="row">
+        <section class="card">
+            <h2>Telemetry (latest)</h2>
+            <button onclick="loadTelemetry()">Reload</button>
+            <pre id="telemetry"></pre>
+        </section>
+
+        <section class="card">
+            <h2>Proximity</h2>
+            <button onclick="loadProximity()">Reload</button>
+            <pre id="proximity"></pre>
+        </section>
+
+        <section class="card">
+            <h2>Alarms</h2>
+            <div>
+                <button onclick="loadAlarms()">Reload</button>
+                <button onclick="ackAll()">Ack All</button>
+            </div>
+            <pre id="alarms"></pre>
+        </section>
+
+        <section class="card">
+            <h2>Radar (Demo)</h2>
+            <canvas id="radar" width="500" height="500"></canvas>
+        </section>
+    </main>
+
+    <script>
+    async function loadTelemetry() {
+      const r = await fetch('/api/telemetry/latest?take=5');
+      document.getElementById('telemetry').textContent = JSON.stringify(await r.json(), null, 2);
+    }
+    async function loadProximity() {
+      const r = await fetch('/api/proximity');
+      const data = await r.json();
+      document.getElementById('proximity').textContent = JSON.stringify(data, null, 2);
+      drawRadar(data);
+    }
+    async function loadAlarms() {
+      const r = await fetch('/api/alarms');
+      document.getElementById('alarms').textContent = JSON.stringify(await r.json(), null, 2);
+    }
+    async function ackAll() {
+      await fetch('/api/alarms/ack-all', { method: 'POST' });
+      loadAlarms();
+    }
+
+    // sehr einfache Radar-Visualisierung (XY → Polar)
+    function drawRadar(s) {
+      const cv = document.getElementById('radar');
+      const ctx = cv.getContext('2d');
+      ctx.clearRect(0,0,cv.width,cv.height);
+      // Hintergrund
+      ctx.fillStyle = '#0a0f14';
+      ctx.fillRect(0,0,cv.width,cv.height);
+      ctx.strokeStyle = '#0b3b52';
+      for (let r=60; r<=240; r+=60) {
+        ctx.beginPath(); ctx.arc(250,250,r,0,Math.PI*2); ctx.stroke();
+      }
+      // Kontakte
+      if (!s || !s.contacts) return;
+      ctx.fillStyle = '#9bdcff';
+      s.contacts.forEach(c => {
+        // RelBearingDeg 0° = oben, im Uhrzeigersinn
+        const a = (c.relBearingDeg - 90) * Math.PI/180;
+        const R = Math.min(240, c.rangeKm * 30); // einfache Skalierung
+        const x = 250 + Math.cos(a) * R;
+        const y = 250 + Math.sin(a) * R;
+        ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
+      });
+    }
+
+    // initial load
+    loadTelemetry(); loadProximity(); loadAlarms();
+    </script>
+</body>
+</html>

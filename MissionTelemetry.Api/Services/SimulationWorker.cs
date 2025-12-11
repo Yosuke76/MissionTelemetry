@@ -1,9 +1,14 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MissionTelemetry.Api.Repositories;
 using MissionTelemetry.Core.Models;
 using MissionTelemetry.Core.Services;
+using MissionTelemetry.Persistence;
+using MissionTelemetry.Persistence.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 
 namespace MissionTelemetry.Api.Services;
@@ -17,6 +22,9 @@ namespace MissionTelemetry.Api.Services;
     private readonly IAlarmEvaluator _evaluator;
     private readonly IAlarmManager _alarms;
     private readonly ILogger<SimulationWorker> _log;
+    // private readonly IDbContextFactory<MissionDbContext> _dbFactory;
+    private readonly IServiceScopeFactory _scopeFactory;
+
 
 
     public SimulationWorker(
@@ -26,6 +34,8 @@ namespace MissionTelemetry.Api.Services;
         IProximityRepository proxRepo,
         IAlarmEvaluator evaluator,
         IAlarmManager alarms,
+        // IDbContextFactory<MissionDbContext> dbFactory,
+        IServiceScopeFactory scopeFactory,
         ILogger<SimulationWorker> log)
     {
         _telemetry = telemetry;
@@ -34,8 +44,11 @@ namespace MissionTelemetry.Api.Services;
         _proxRepo = proxRepo;
         _evaluator = evaluator;
         _alarms = alarms;
+        
+        _scopeFactory = scopeFactory;
         _log = log;
 
+        // Events abonnieren
         _telemetry.FrameReceived += OnFrame;
         _proximity.Snapshot += OnSnapshot;
         
@@ -43,18 +56,33 @@ namespace MissionTelemetry.Api.Services;
 
     private void OnFrame(object? sender, TelemetryFrame frame)
     {
+        //  In-Memory Puffer aktualisieren
         _teleRepo.Add(frame);
 
-        if (frame.Values is null) return;
+        //  Alarme evaluieren + manager updaten 
+        foreach (var ev in _evaluator.Evaluate(frame))
+            _alarms.RaiseOrUpdate(ev.Key, ev.Severity, ev.Message, ev.Value, latched: false);
 
-        foreach(var ev in _evaluator.Evaluate(frame))
-        {
-            _alarms.RaiseOrUpdate(ev.Key, ev.Severity, ev.Message, ev.Value, latched : false);
-        }
+        if (frame.Values is not null)
+            foreach (var k in frame.Values.Keys)
+                _alarms.ClearIfNotLatched(k);
 
-        foreach(var key in frame.Values.Keys)
+        //  PERSISTENZ: pro Event einen SCOPE öffnen und DbContext daraus holen
+        if (frame.Values is { Count: > 0 })
         {
-            _alarms.ClearIfNotLatched(key);
+            using var scope = _scopeFactory.CreateScope();                          
+            var db = scope.ServiceProvider.GetRequiredService<MissionDbContext>();  
+
+            foreach (var (key, val) in frame.Values)
+            {
+                db.TelemetrySamples.Add(new TelemetrySample
+                {
+                    TimeStamp = frame.TimeStamp,
+                    Key = key,
+                    Value = val
+                });
+            }
+            db.SaveChanges(); // ADDED
         }
     }
 
