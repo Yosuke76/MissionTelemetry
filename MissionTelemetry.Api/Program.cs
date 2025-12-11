@@ -1,15 +1,38 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MissionTelemetry.Api.Repositories;
 using MissionTelemetry.Core.Services;
+using MissionTelemetry.Persistence;
+using MissionTelemetry.Persistence.Entities;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Services
-builder.Services.AddOpenApi();     // Microsoft.AspNetCore.OpenApi
+// ---------- Services ----------
+builder.Services.AddOpenApi();          // OpenAPI JSON 
 builder.Services.AddControllers();
 
+
+builder.Services.AddCors(o => o.AddPolicy("AllowSameOrigin",
+    p => p
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .SetIsOriginAllowed(origin => true) //  dev: alles erlauben
+        .AllowCredentials()
+));
+
+//  fÃ¼r schnellere Auslieferung von Web-Assets
+builder.Services.AddResponseCompression(opts =>
+{
+    opts.EnableForHttps = true;
+    opts.Providers.Add<GzipCompressionProvider>();
+    opts.Providers.Add<BrotliCompressionProvider>();
+});
+
+//  Repos / Evaluator / Manager / Quellen / Worker 
 builder.Services.AddSingleton<ITelemetryRepository, InMemoryTelemetryRepository>();
 builder.Services.AddSingleton<IProximityRepository, InMemoryProximityRepository>();
 builder.Services.AddSingleton<IAlarmReadModel, AlarmReadModelAdapter>();
@@ -20,19 +43,38 @@ builder.Services.AddSingleton<IAlarmEvaluator>(sp =>
     var dict = new JsonDictionaryLoader().LoadFromFile(path);
     return new DataDrivenAlarmEvaluator(dict);
 });
-
 builder.Services.AddSingleton<IAlarmManager, AlarmManager>();
 
 builder.Services.AddSingleton<IProximitySource>(_ => new SimulatedProximitySource(1.0));
+
 builder.Services.AddSingleton<ITelemtrySource>(_ => new SimulatedTelemetrySource(1.0));
 builder.Services.AddHostedService<MissionTelemetry.Api.Services.SimulationWorker>();
 
+builder.Services.AddDbContext<MissionDbContext>(opt =>
+    opt.UseInMemoryDatabase("MissionDb"));
+
+//builder.Services.AddDbContextFactory<MissionDbContext>(opt =>
+//opt.UseInMemoryDatabase("MissionDb"));
+
+
 var app = builder.Build();
 
-// OpenAPI JSON IMMER verfügbar (nicht nur in Development)
-app.MapOpenApi(); // -> /openapi/v1.json
+// Middleware-Pipeline 
+app.UseHttpsRedirection();
+app.UseResponseCompression();
+app.UseCors("AllowSameOrigin");          
 
-// ReDoc UI unter /docs (alternative zu Swagger UI)
+// Statische Website ausliefern (wwwroot)
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+
+app.MapOpenApi();    // /openapi/v1.json
+
+app.MapGet("/status", () => Results.Text("OK - API up", "text/plain"));                   
+
+// schlanke Doku-UI 
 app.MapGet("/docs", () =>
 {
     var html = """
@@ -53,11 +95,10 @@ app.MapGet("/docs", () =>
     return Results.Content(html, "text/html");
 });
 
-// Kleine Startseite für "/"
-app.MapGet("/", () =>
-    Results.Text("MissionTelemetry API läuft.\nDocs: /docs\nOpenAPI: /openapi/v1.json",
-                 "text/plain"));
-
-app.UseHttpsRedirection();
+// API-Controller
 app.MapControllers();
+
+//  Fallback fï¿½r SPA-Routing (wenn du clientseitige Routen nutzt)
+app.MapFallbackToFile("index.html");
+
 app.Run();
