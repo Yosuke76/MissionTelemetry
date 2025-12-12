@@ -9,6 +9,8 @@ using MissionTelemetry.Persistence;
 using MissionTelemetry.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using MissionTelemetry.Api.Options;
 
 
 namespace MissionTelemetry.Api.Services;
@@ -17,7 +19,9 @@ namespace MissionTelemetry.Api.Services;
     {
     private readonly ITelemtrySource _telemetry;
     private readonly IProximitySource _proximity;
-    private readonly ITelemetryRepository _teleRepo;
+    // private readonly ITelemetryRepository _teleRepo;
+    private readonly InMemoryTelemetryRepository? _memRepo;
+    private readonly bool _useEf;
     private readonly IProximityRepository _proxRepo;
     private readonly IAlarmEvaluator _evaluator;
     private readonly IAlarmManager _alarms;
@@ -30,21 +34,24 @@ namespace MissionTelemetry.Api.Services;
     public SimulationWorker(
         ITelemtrySource telemetry,
         IProximitySource proximity,
-        ITelemetryRepository teleRepo,
+        // ITelemetryRepository teleRepo,
+        InMemoryTelemetryRepository memRepo,
         IProximityRepository proxRepo,
         IAlarmEvaluator evaluator,
         IAlarmManager alarms,
         // IDbContextFactory<MissionDbContext> dbFactory,
         IServiceScopeFactory scopeFactory,
+        IOptions<TelemetryOptions> options,
         ILogger<SimulationWorker> log)
     {
         _telemetry = telemetry;
         _proximity = proximity;
-        _teleRepo = teleRepo;
+        // _teleRepo = teleRepo;
+        _memRepo = memRepo;
         _proxRepo = proxRepo;
         _evaluator = evaluator;
         _alarms = alarms;
-        
+        _useEf = options.Value.UseEfRepository;
         _scopeFactory = scopeFactory;
         _log = log;
 
@@ -56,10 +63,13 @@ namespace MissionTelemetry.Api.Services;
 
     private void OnFrame(object? sender, TelemetryFrame frame)
     {
-        //  In-Memory Puffer aktualisieren
-        _teleRepo.Add(frame);
+        // Wenn EF NICHT genutzt wird → Memory-Puffer füllen 
+        if (!_useEf)
+        {
+            _memRepo?.Add(frame);
+        }
 
-        //  Alarme evaluieren + manager updaten 
+        // Alarme evaluieren + managen 
         foreach (var ev in _evaluator.Evaluate(frame))
             _alarms.RaiseOrUpdate(ev.Key, ev.Severity, ev.Message, ev.Value, latched: false);
 
@@ -67,11 +77,11 @@ namespace MissionTelemetry.Api.Services;
             foreach (var k in frame.Values.Keys)
                 _alarms.ClearIfNotLatched(k);
 
-        //  PERSISTENZ: pro Event einen SCOPE öffnen und DbContext daraus holen
+        // Persistenz via EF Core (Scope pro Event) – bleibt IMMER aktiv
         if (frame.Values is { Count: > 0 })
         {
-            using var scope = _scopeFactory.CreateScope();                          
-            var db = scope.ServiceProvider.GetRequiredService<MissionDbContext>();  
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<MissionDbContext>();
 
             foreach (var (key, val) in frame.Values)
             {
@@ -82,7 +92,7 @@ namespace MissionTelemetry.Api.Services;
                     Value = val
                 });
             }
-            db.SaveChanges(); // ADDED
+            db.SaveChanges();
         }
     }
 

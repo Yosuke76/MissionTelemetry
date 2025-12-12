@@ -7,6 +7,8 @@ using MissionTelemetry.Api.Repositories;
 using MissionTelemetry.Core.Services;
 using MissionTelemetry.Persistence;
 using MissionTelemetry.Persistence.Entities;
+using Microsoft.Extensions.Options;
+using MissionTelemetry.Api.Options;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,7 +35,16 @@ builder.Services.AddResponseCompression(opts =>
 });
 
 //  Repos / Evaluator / Manager / Quellen / Worker 
-builder.Services.AddSingleton<ITelemetryRepository, InMemoryTelemetryRepository>();
+builder.Services.AddScoped<ITelemetryRepository>(sp =>
+{
+    var opt = sp.GetRequiredService<IOptions<TelemetryOptions>>().Value;
+    if (opt.UseEfRepository)
+        return ActivatorUtilities.CreateInstance<EfTelemetryRepository>(sp);   // scoped EF
+    else
+        return sp.GetRequiredService<InMemoryTelemetryRepository>();           // Singleton Memory
+});
+
+builder.Services.AddSingleton<InMemoryTelemetryRepository>();
 builder.Services.AddSingleton<IProximityRepository, InMemoryProximityRepository>();
 builder.Services.AddSingleton<IAlarmReadModel, AlarmReadModelAdapter>();
 
@@ -52,6 +63,10 @@ builder.Services.AddHostedService<MissionTelemetry.Api.Services.SimulationWorker
 
 builder.Services.AddDbContext<MissionDbContext>(opt =>
     opt.UseInMemoryDatabase("MissionDb"));
+
+builder.Services.Configure<TelemetryOptions>(
+    builder.Configuration.GetSection("Telemetry"));
+    
 
 //builder.Services.AddDbContextFactory<MissionDbContext>(opt =>
 //opt.UseInMemoryDatabase("MissionDb"));
