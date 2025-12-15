@@ -9,6 +9,7 @@ using MissionTelemetry.Persistence;
 using MissionTelemetry.Persistence.Entities;
 using Microsoft.Extensions.Options;
 using MissionTelemetry.Api.Options;
+using System.Runtime.InteropServices;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,7 +63,10 @@ builder.Services.AddSingleton<ITelemtrySource>(_ => new SimulatedTelemetrySource
 builder.Services.AddHostedService<MissionTelemetry.Api.Services.SimulationWorker>();
 
 builder.Services.AddDbContext<MissionDbContext>(opt =>
-    opt.UseInMemoryDatabase("MissionDb"));
+{
+    var cs = builder.Configuration.GetConnectionString("MissionDb");
+    opt.UseSqlite(cs);
+});
 
 builder.Services.Configure<TelemetryOptions>(
     builder.Configuration.GetSection("Telemetry"));
